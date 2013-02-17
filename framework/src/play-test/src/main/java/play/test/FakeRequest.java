@@ -2,11 +2,15 @@ package play.test;
 
 import org.codehaus.jackson.JsonNode;
 import play.api.mvc.AnyContentAsJson;
+import play.api.mvc.FiniteCookie;
 import play.libs.*;
 import play.mvc.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import scala.collection.Seq;
+import scala.concurrent.duration.Duration;
 
 /**
  * Fake HTTP request implementation.
@@ -99,7 +103,7 @@ public class FakeRequest {
     public FakeRequest withCookies(Http.Cookie... cookies) {
         List <play.api.mvc.Cookie> scalacookies = new ArrayList<play.api.mvc.Cookie>();
         for (Http.Cookie c : cookies) {
-            scalacookies.add(new play.api.mvc.Cookie(c.name(), c.value(), Scala.<Object>Option(c.maxAge()), c.path(), Scala.Option(c.domain()), c.secure(), c.httpOnly()) );
+            scalacookies.add(new FiniteCookie(c.name(), c.value(), Duration.create(c.maxAge(), TimeUnit.SECONDS), c.path(), Scala.Option(c.domain()), c.secure(), c.httpOnly()) );
         }
         fake = fake.withCookies(Scala.varargs(scalacookies.toArray()));
         return this;

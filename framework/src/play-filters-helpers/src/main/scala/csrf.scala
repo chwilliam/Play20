@@ -117,7 +117,7 @@ package play.filters.csrf {
            val cookies = Cookies(r.header.headers.get("Set-Cookie"))
            logger.trace("[CSRF] Adding cookie token to response")
            logger.trace("[CSRF] response was: " + r)
-           val resp = cookies.get(c).map(_ => r).getOrElse(r.withCookies(Cookie(c, token.value)))
+           val resp = cookies.get(c).map(_ => r).getOrElse(r.withCookies(TransientCookie(c, token.value)))
            logger.trace("[CSRF] response is now: " + resp)
            resp
          }
@@ -169,12 +169,12 @@ package play.filters.csrf {
           }
 
           lazy val newSession = request.session + (TOKEN_NAME -> token.value)
-          lazy val sc = Cookies.encode(Seq(Cookie(Session.COOKIE_NAME, Session.encode(newSession.data))))
+          lazy val sc = Cookies.encode(Seq(TransientCookie(Session.COOKIE_NAME, Session.encode(newSession.data))))
 
           logger.trace("[CSRF] adding session token to request: " + newSession)
 
           lazy val cookiesHeader = request.headers.get(HeaderNames.COOKIE).map { cookies =>
-            Cookies.merge(cookies, Seq(Cookie(Session.COOKIE_NAME, Session.encode(newSession.data))))
+            Cookies.merge(cookies, Seq(TransientCookie(Session.COOKIE_NAME, Session.encode(newSession.data))))
           }.getOrElse(sc)
 
           logger.trace("[CSRF] cookies header value in request is now: " + cookiesHeader)
@@ -203,9 +203,9 @@ package play.filters.csrf {
 
           logger.trace("[CSRF] adding cookie %s token to request: %s".format(c, token))
 
-          lazy val sc = Cookies.encode(Seq(Cookie(c, token.value)))
+          lazy val sc = Cookies.encode(Seq(TransientCookie(c, token.value)))
           lazy val cookiesHeader = request.headers.get(HeaderNames.COOKIE).map { cookies =>
-            Cookies.merge(cookies, Seq(Cookie(c, token.value)))
+            Cookies.merge(cookies, Seq(TransientCookie(c, token.value)))
           }.getOrElse(sc)
 
           logger.trace("[CSRF] cookies header value in request is now: " + cookiesHeader)

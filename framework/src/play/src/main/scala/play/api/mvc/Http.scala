@@ -620,38 +620,88 @@ package play.api.mvc {
 
   }
 
-  /**
-   * An HTTP cookie.
-   *
-   * @param name the cookie name
-   * @param value the cookie value
-   * @param maxAge the cookie expiration date in seconds, `None` for a transient cookie, or a value less than 0 to expire a cookie now
-   * @param path the cookie path, defaulting to the root path `/`
-   * @param domain the cookie domain
-   * @param secure whether this cookie is secured, sent only for HTTPS requests
-   * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
-   */
-  case class Cookie(name: String, value: String, maxAge: Option[Int] = None, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true)
+  trait Cookie
+  {
+    def name: String
+    def value: String
+    lazy val maxAge: Option[Int] = duration.map(_.toUnit(SECONDS).ceil.toInt)
+    def duration: Option[FiniteDuration]
+    def path: String
+    def domain: Option[String]
+    def secure: Boolean
+    def httpOnly: Boolean
+  }
 
   object Cookie
   {
     /**
-     * An HTTP cookie.
+     * Returns an HTTP cookie.
      *
      * @param name the cookie name
      * @param value the cookie value
-     * @param maxAge the cookie expiration date as a FiniteDuration (rounded to seconds), `None` for a transient cookie, or a value less than 0 to expire a cookie now
+     * @param maxAge the cookie expiration date in seconds, `None` for a transient cookie, or a value less than 0 to expire a cookie now
      * @param path the cookie path, defaulting to the root path `/`
      * @param domain the cookie domain
      * @param secure whether this cookie is secured, sent only for HTTPS requests
      * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
      */
-    def apply(name: String, value: String, maxAge: FiniteDuration, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) : Cookie =
+    @deprecated("Use TransientCookie/SuicidalCookie/FiniteCookie instead")
+    def apply(name: String, value: String, maxAge: Option[Int] = None, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) : Cookie =
     {
-      Cookie(name, value, Option(maxAge.toUnit(SECONDS).ceil.toInt), path, domain, secure, httpOnly)
+      maxAge match {
+        case Some(dur : Int) if dur  > 0   => FiniteCookie(name, value, Duration(dur, SECONDS), path, domain, secure, httpOnly)
+        case Some(dur : Int) if dur <= 0   => EphemeralCookie(name, value, path, domain, secure, httpOnly)
+        case None => TransientCookie(name, value, path, domain, secure, httpOnly)
+      }
     }
-
   }
+
+  /**
+   * Cookie that will expire at the end of the browser session
+   *
+   * @param name the cookie name
+   * @param value the cookie value
+   * @param path the cookie path, defaulting to the root path `/`
+   * @param domain the cookie domain
+   * @param secure whether this cookie is secured, sent only for HTTPS requests
+   * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
+   */
+  case class TransientCookie(name: String, value: String, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) extends Cookie
+  {
+    val duration = None
+  }
+
+  /**
+   * Cookie that will expire immediately
+   *
+   * @param name the cookie name
+   * @param value the cookie value
+   * @param path the cookie path, defaulting to the root path `/`
+   * @param domain the cookie domain
+   * @param secure whether this cookie is secured, sent only for HTTPS requests
+   * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
+   */
+  case class EphemeralCookie(name: String, value: String, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) extends Cookie
+  {
+    val duration = Some(-1.seconds)
+  }
+
+  /**
+  * Cookie that will expire after the duration specified
+  *
+  * @param name the cookie name
+  * @param value the cookie value
+  * @param cookieDuration the duration the cookie will exist, negative duration means immediate disposal
+  * @param path the cookie path, defaulting to the root path `/`
+  * @param domain the cookie domain
+  * @param secure whether this cookie is secured, sent only for HTTPS requests
+  * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
+  */
+  case class FiniteCookie(name: String, value: String, cookieDuration: FiniteDuration, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) extends Cookie
+  {
+    val duration = Some(cookieDuration)
+  }
+
 
   /**
    * A cookie to be discarded.  This contains only the data necessary for discarding a cookie.
@@ -662,7 +712,7 @@ package play.api.mvc {
    * @param secure whether this cookie is secured
    */
   case class DiscardingCookie(name: String, path: String = "/", domain: Option[String] = None, secure: Boolean = false) {
-    def toCookie = Cookie(name, "", Some(-1), path, domain, secure)
+    def toCookie = EphemeralCookie(name, "", path, domain, secure)
   }
 
   /**
