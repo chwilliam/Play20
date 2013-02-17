@@ -7,6 +7,10 @@ import com.typesafe.config._
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration._
+
+
 /**
  * This object provides a set of operations to create `Configuration` values.
  *
@@ -173,6 +177,25 @@ case class Configuration(underlying: Config) {
    * @return a configuration value
    */
   def getBoolean(path: String): Option[Boolean] = readValue(path, underlying.getBoolean(path))
+
+
+  /**
+   * Retrieves a configuration value as `Milliseconds`.
+   *
+   * For example:
+   * {{{
+   * val configuration = Configuration.load()
+   * val timeout = configuration.getDuration("engine.timeout")
+   * }}}
+   *
+   * The configuration must be provided as:
+   *
+   * {{{
+   * engine.timeout = 1 second
+   * }}}
+   */
+  def getDuration(path : String) = readValue(path, Duration(underlying.getString(path)))
+
 
   /**
    * Retrieves a configuration value as `Milliseconds`.
