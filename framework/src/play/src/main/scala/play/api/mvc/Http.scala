@@ -6,8 +6,9 @@ package play.api.mvc {
   import play.api.libs.iteratee._
   import play.api.libs.Crypto
 
+  import scala.concurrent.duration._
   import scala.annotation._
-import scala.util.control.NonFatal
+  import scala.util.control.NonFatal
 
 /**
    * The HTTP request header. Note that it doesn’t contain the request body yet.
@@ -631,6 +632,26 @@ import scala.util.control.NonFatal
    * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
    */
   case class Cookie(name: String, value: String, maxAge: Option[Int] = None, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true)
+
+  object Cookie
+  {
+    /**
+     * An HTTP cookie.
+     *
+     * @param name the cookie name
+     * @param value the cookie value
+     * @param maxAge the cookie expiration date as a FiniteDuration (rounded to seconds), `None` for a transient cookie, or a value less than 0 to expire a cookie now
+     * @param path the cookie path, defaulting to the root path `/`
+     * @param domain the cookie domain
+     * @param secure whether this cookie is secured, sent only for HTTPS requests
+     * @param httpOnly whether this cookie is HTTP only, i.e. not accessible from client-side JavaScipt code
+     */
+    def apply(name: String, value: String, maxAge: FiniteDuration, path: String = "/", domain: Option[String] = None, secure: Boolean = false, httpOnly: Boolean = true) : Cookie =
+    {
+      Cookie(name, value, Option(maxAge.toUnit(SECONDS).ceil.toInt), path, domain, secure, httpOnly)
+    }
+
+  }
 
   /**
    * A cookie to be discarded.  This contains only the data necessary for discarding a cookie.

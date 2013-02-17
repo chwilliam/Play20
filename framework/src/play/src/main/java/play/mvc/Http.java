@@ -2,12 +2,15 @@ package play.mvc;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import org.w3c.dom.*;
 import org.codehaus.jackson.*;
 
 import play.i18n.Lang;
 import play.Play;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
 /**
  * Defines HTTP standard objects.
@@ -552,10 +555,31 @@ public class Http {
          * Set a new cookie with path “/”
          * @param name Cookie name
          * @param value Cookie value
+         * @param maxAge Cookie duration as Duration (null for a transient cookie and 0 or less for a cookie that expires now)
+         */
+        public void setCookie(String name, String value, FiniteDuration maxAge) {
+            setCookie(name, value, maxAge, "/");
+        }
+
+        /**
+         * Set a new cookie with path “/”
+         * @param name Cookie name
+         * @param value Cookie value
          * @param maxAge Cookie duration (null for a transient cookie and 0 or less for a cookie that expires now)
          */
-        public void setCookie(String name, String value, Integer maxAge) {
+        public void setCookie(String name, String value, int maxAge) {
             setCookie(name, value, maxAge, "/");
+        }
+
+        /**
+         * Set a new cookie
+         * @param name Cookie name
+         * @param value Cookie value
+         * @param maxAge Cookie duration as Duration (null for a transient cookie and 0 or less for a cookie that expires now)
+         * @param path Cookie path
+         */
+        public void setCookie(String name, String value, FiniteDuration maxAge, String path) {
+            setCookie(name, value, maxAge, path, null);
         }
 
         /**
@@ -565,8 +589,20 @@ public class Http {
          * @param maxAge Cookie duration (null for a transient cookie and 0 or less for a cookie that expires now)
          * @param path Cookie path
          */
-        public void setCookie(String name, String value, Integer maxAge, String path) {
+        public void setCookie(String name, String value, int maxAge, String path) {
             setCookie(name, value, maxAge, path, null);
+        }
+
+        /**
+         * Set a new cookie
+         * @param name Cookie name
+         * @param value Cookie value
+         * @param maxAge Cookie duration as Duration (null for a transient cookie and 0 or less for a cookie that expires now)
+         * @param path Cookie path
+         * @param domain Cookie domain
+         */
+        public void setCookie(String name, String value, FiniteDuration maxAge, String path, String domain) {
+            setCookie(name, value, maxAge, path, domain, false, false);
         }
 
         /**
@@ -577,8 +613,24 @@ public class Http {
          * @param path Cookie path
          * @param domain Cookie domain
          */
-        public void setCookie(String name, String value, Integer maxAge, String path, String domain) {
+        public void setCookie(String name, String value, int maxAge, String path, String domain) {
             setCookie(name, value, maxAge, path, domain, false, false);
+        }
+
+
+
+        /**
+         * Set a new cookie
+         * @param name Cookie name
+         * @param value Cookie value
+         * @param maxAge Cookie duration as Duration (null for a transient cookie and 0 or less for a cookie that expires now)
+         * @param path Cookie path
+         * @param domain Cookie domain
+         * @param secure Whether the cookie is secured (for HTTPS requests)
+         * @param httpOnly Whether the cookie is HTTP only (i.e. not accessible from client-side JavaScript code)
+         */
+        public void setCookie(String name, String value, FiniteDuration maxAge, String path, String domain, boolean secure, boolean httpOnly) {
+            cookies.add(new Cookie(name, value, maxAge, path, domain, secure, httpOnly));
         }
 
         /**
@@ -591,7 +643,7 @@ public class Http {
          * @param secure Whether the cookie is secured (for HTTPS requests)
          * @param httpOnly Whether the cookie is HTTP only (i.e. not accessible from client-side JavaScript code)
          */
-        public void setCookie(String name, String value, Integer maxAge, String path, String domain, boolean secure, boolean httpOnly) {
+        public void setCookie(String name, String value, int maxAge, String path, String domain, boolean secure, boolean httpOnly) {
             cookies.add(new Cookie(name, value, maxAge, path, domain, secure, httpOnly));
         }
 
@@ -778,11 +830,18 @@ public class Http {
         private final boolean secure;
         private final boolean httpOnly;
 
-        public Cookie(String name, String value, Integer maxAge, String path,
+        public Cookie(String name, String value, int maxAge, String path,
                 String domain, boolean secure, boolean httpOnly) {
+
+            this(name, value, Duration.apply(maxAge, TimeUnit.SECONDS), path, domain, secure, httpOnly);
+        }
+
+        public Cookie(String name, String value, FiniteDuration maxAge, String path,
+                      String domain, boolean secure, boolean httpOnly) {
+
             this.name = name;
             this.value = value;
-            this.maxAge = maxAge;
+            if (maxAge == null) this.maxAge = null; else this.maxAge = (int) Math.ceil(maxAge.toUnit(TimeUnit.SECONDS));
             this.path = path;
             this.domain = domain;
             this.secure = secure;
