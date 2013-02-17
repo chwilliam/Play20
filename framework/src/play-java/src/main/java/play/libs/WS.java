@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import com.ning.http.util.AsyncHttpProviderUtils;
 import org.jboss.netty.handler.codec.http.HttpHeaders;
@@ -28,6 +29,7 @@ import play.libs.F.Promise;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import scala.concurrent.duration.Duration;
 
 /**
  * Asynchronous API to to query web services, as an http client.
@@ -270,6 +272,15 @@ public class WS {
         public WSRequestHolder setTimeout(int timeout) {
             this.timeout = timeout;
             return this;
+        }
+
+        /**
+         * Sets the request timeout as a duration
+         *
+         * @param timeout
+         */
+        public WSRequestHolder setTimeout(Duration timeout) {
+            return setTimeout((int)Math.ceil(timeout.toUnit(TimeUnit.MILLISECONDS)));
         }
 
         /**

@@ -3,6 +3,7 @@ package play.db.ebean;
 import java.util.*;
 import java.beans.*;
 import java.lang.reflect.*;
+import java.util.concurrent.TimeUnit;
 
 import com.avaje.ebean.Ebean;
 import com.avaje.ebean.OrderBy;
@@ -25,6 +26,7 @@ import play.libs.F.*;
 import static play.libs.F.*;
 
 import org.springframework.beans.*;
+import scala.concurrent.duration.Duration;
 
 /**
  * Base-class for Ebean-mapped models that provides convenience methods.
@@ -661,6 +663,15 @@ public class Model {
          */
         public Query<T> setTimeout(int secs) {
             return query().setTimeout(secs);
+        }
+
+        /**
+         * Sets a timeout on this query.
+         */
+        public Query<T> setTimeout(Duration timeout) {
+            double secs = timeout.toUnit(TimeUnit.SECONDS);
+            if (secs == Double.POSITIVE_INFINITY) return setTimeout(0);
+            else return setTimeout((int)Math.max(Math.ceil(secs), 1));
         }
 
         /**

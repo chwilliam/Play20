@@ -5,6 +5,7 @@ import scala.concurrent.Future;
 
 import play.api.*;
 import play.libs.F.*;
+import scala.concurrent.duration.*;
 
 /**
  * Helper to access the application defined Akka Actor system.
@@ -30,6 +31,13 @@ public class Akka {
      */
     public static <T> Promise<T> future(java.util.concurrent.Callable<T> callable) {
         return play.core.j.JavaPromise.akkaFuture(callable);
+    }
+
+    /**
+     * Returns a Promise which is redeemed after a period of time.
+     */
+    public static <T> Promise<T> timeout(java.util.concurrent.Callable<T> callable, FiniteDuration duration) {
+        return timeout(callable,duration.length(),duration.unit());
     }
 
     /**

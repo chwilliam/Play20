@@ -19,6 +19,7 @@ import com.ning.http.client.{
 import collection.immutable.TreeMap
 import play.core.utils.CaseInsensitiveOrdered
 import com.ning.http.util.AsyncHttpProviderUtils
+import concurrent.duration._
 
 /**
  * Asynchronous API to to query web services, as an http client.
@@ -348,6 +349,12 @@ object WS {
      */
     def withTimeout(timeout: Int): WSRequestHolder =
       this.copy(timeout = Some(timeout))
+
+    /**
+     * Sets the request timeout from a duration
+     */
+    def withTimeout(timeout: Duration): WSRequestHolder =
+      this.copy(timeout = Some(timeout.toUnit(MILLISECONDS).ceil.toInt))
 
     def withVirtualHost(vh: String): WSRequestHolder = {
       this.copy(virtualHost = Some(vh))

@@ -11,6 +11,9 @@ import org.fluentlenium.core._
 import java.util.concurrent.TimeUnit
 import com.google.common.base.Function
 import org.openqa.selenium.support.ui.FluentWait
+import org.specs2.time.Duration
+import concurrent.duration.FiniteDuration
+
 /**
  * A test browser (Using Selenium WebDriver) with the FluentLenium API (https://github.com/Fluentlenium/FluentLenium).
  *
@@ -30,7 +33,7 @@ case class TestBrowser(webDriver: WebDriver, baseUrl: Option[String]) extends Fl
    * @param timeUnit duration
    * @param block code to be executed
    */
-  def waitUntil[T](timeout: Int, timeUnit: TimeUnit)(block: => T): T = {
+  def waitUntil[T](timeout: Long, timeUnit: TimeUnit)(block: => T): T = {
     val wait = new FluentWait[WebDriver](webDriver).withTimeout(timeout, timeUnit)
     val f = new Function[WebDriver, T]() {
       def apply(driver: WebDriver): T = {
@@ -41,6 +44,18 @@ case class TestBrowser(webDriver: WebDriver, baseUrl: Option[String]) extends Fl
   }
 
   /**
+   * Repeatedly applies this instance's input value to the given block until one of the following occurs:
+   * the function returns neither null nor false,
+   * the function throws an unignored exception,
+   * the timeout expires
+   *
+   * @param timeout duration
+   * @param block code to be executed
+   */
+  def waitUntil[T](timeout: FiniteDuration)(block: => T): T = waitUntil(timeout.length, timeout.unit)(block)
+
+
+    /**
    * Repeatedly applies this instance's input value to the given block until one of the following occurs:
    * the function returns neither null nor false,
    * the function throws an unignored exception,

@@ -13,6 +13,7 @@ import javax.sql._
 import com.jolbox.bonecp._
 import com.jolbox.bonecp.hooks._
 import scala.util.control.NonFatal
+import scala.concurrent.duration._
 
 /**
  * The Play Database API manages several connection pools.
@@ -479,7 +480,9 @@ private class AutoCleanConnection(connection: Connection) extends Connection {
   def getWarnings() = connection.getWarnings()
   def isClosed() = connection.isClosed()
   def isReadOnly() = connection.isReadOnly()
-  def isValid(timeout: Int) = connection.isValid(timeout)
+  def isValid() : Boolean  = isValid(0)
+  def isValid(timeout: Duration) : Boolean = isValid( if(timeout == Duration.Inf) 0 else timeout.toUnit(SECONDS).max(1).ceil.toInt )
+  def isValid(timeout: Int) : Boolean = connection.isValid(timeout)
   def nativeSQL(sql: String) = connection.nativeSQL(sql)
   def releaseSavepoint(savepoint: Savepoint) { connection.releaseSavepoint(savepoint) }
   def rollback() { connection.rollback() }
